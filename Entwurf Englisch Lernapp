@@ -1,0 +1,426 @@
+import React, { useState, useEffect } from 'react';
+import { BookOpen, Brain, CheckCircle, XCircle, Play, RotateCcw, Trophy, Star, Target, BookMarked, Languages, Lightbulb } from 'lucide-react';
+
+const EnglishLearningApp = () => {
+  const [activeTab, setActiveTab] = useState('home');
+  const [currentExercise, setCurrentExercise] = useState(null);
+  const [userAnswer, setUserAnswer] = useState('');
+  const [selectedAnswers, setSelectedAnswers] = useState([]);
+  const [feedback, setFeedback] = useState(null);
+  const [points, setPoints] = useState(0);
+  const [streak, setStreak] = useState(0);
+  const [completedExercises, setCompletedExercises] = useState({});
+
+  // Übungskategorien nach Bildungsplan BW
+  const exerciseCategories = {
+    listening: {
+      name: 'Hörverstehen',
+      icon: '🎧',
+      color: 'bg-blue-500',
+      exercises: [
+        {
+          id: 'l1',
+          title: 'Dialogue: At the Airport',
+          level: 'Klasse 8',
+          type: 'listening',
+          question: 'What is the passenger looking for?',
+          audio: 'Passenger: Excuse me, where can I find the baggage claim? Staff: It\'s downstairs, follow the signs.',
+          options: ['The check-in counter', 'The baggage claim', 'The security check', 'The exit'],
+          correct: 1,
+          explanation: 'Der Passagier fragt nach "baggage claim" (Gepäckausgabe).'
+        },
+        {
+          id: 'l2',
+          title: 'News Report: Climate Action',
+          level: 'Klasse 9',
+          type: 'listening',
+          question: 'What action did the students take?',
+          audio: 'Reporter: Local students organized a tree-planting event last Saturday. Over 200 trees were planted in the community park.',
+          options: ['They wrote letters', 'They planted trees', 'They cleaned the park', 'They gave speeches'],
+          correct: 1,
+          explanation: 'Die Schüler organisierten ein "tree-planting event" (Baumpflanzaktion).'
+        }
+      ]
+    },
+    reading: {
+      name: 'Leseverstehen',
+      icon: '📖',
+      color: 'bg-green-500',
+      exercises: [
+        {
+          id: 'r1',
+          title: 'Blog Post: School Exchange',
+          level: 'Klasse 8',
+          type: 'reading',
+          text: 'Last month, I participated in a school exchange program in London. Staying with a host family was an amazing experience. We visited museums, tried traditional British food, and I made many new friends. The most challenging part was understanding different accents, but it improved my English skills tremendously.',
+          question: 'What was the most challenging aspect of the exchange?',
+          options: ['Making friends', 'Understanding accents', 'Trying new food', 'Visiting museums'],
+          correct: 1,
+          explanation: 'Im Text heißt es "The most challenging part was understanding different accents".'
+        },
+        {
+          id: 'r2',
+          title: 'Article: Social Media Impact',
+          level: 'Klasse 9',
+          type: 'reading',
+          text: 'Social media has transformed how teenagers communicate. While it offers opportunities to connect globally, researchers warn about potential negative effects on mental health. Studies show that excessive screen time can lead to sleep problems and reduced face-to-face interactions. Experts recommend balancing online and offline activities.',
+          question: 'What do experts recommend?',
+          options: ['Avoiding social media completely', 'Balancing online and offline activities', 'Using social media only at night', 'Connecting with more people online'],
+          correct: 1,
+          explanation: 'Experten empfehlen "balancing online and offline activities".'
+        }
+      ]
+    },
+    grammar: {
+      name: 'Grammatik',
+      icon: '✏️',
+      color: 'bg-purple-500',
+      exercises: [
+        {
+          id: 'g1',
+          title: 'Present Perfect vs Simple Past',
+          level: 'Klasse 8',
+          type: 'grammar',
+          question: 'Choose the correct form: I ___ to London three times.',
+          options: ['went', 'have been', 'was', 'am going'],
+          correct: 1,
+          explanation: 'Present Perfect für Erfahrungen ohne genaue Zeitangabe: "have been".'
+        },
+        {
+          id: 'g2',
+          title: 'Conditional Sentences Type 2',
+          level: 'Klasse 9',
+          type: 'grammar',
+          question: 'If I ___ rich, I ___ travel around the world.',
+          options: ['am / will', 'were / would', 'was / will', 'would be / will'],
+          correct: 1,
+          explanation: 'Conditional Type 2 (unreale Gegenwart): If + Past Simple, would + Infinitiv.'
+        },
+        {
+          id: 'g3',
+          title: 'Passive Voice',
+          level: 'Klasse 9',
+          type: 'grammar',
+          question: 'The book ___ by millions of people.',
+          options: ['reads', 'is reading', 'was read', 'has read'],
+          correct: 2,
+          explanation: 'Passiv Vergangenheit: was/were + Past Participle.'
+        }
+      ]
+    },
+    vocabulary: {
+      name: 'Wortschatz',
+      icon: '📚',
+      color: 'bg-yellow-500',
+      exercises: [
+        {
+          id: 'v1',
+          title: 'Everyday Activities',
+          level: 'Klasse 8',
+          type: 'vocabulary',
+          question: 'What does "browse" mean?',
+          options: ['To buy something', 'To look casually through items', 'To sell products', 'To deliver goods'],
+          correct: 1,
+          explanation: '"Browse" bedeutet "durchstöbern" oder "sich umsehen".'
+        },
+        {
+          id: 'v2',
+          title: 'Environment & Sustainability',
+          level: 'Klasse 9',
+          type: 'vocabulary',
+          question: 'What is "renewable energy"?',
+          options: ['Energy that runs out quickly', 'Energy from fossil fuels', 'Energy that can be replenished naturally', 'Energy that is expensive'],
+          correct: 2,
+          explanation: '"Renewable energy" ist Energie, die sich natürlich erneuert (z.B. Solar, Wind).'
+        }
+      ]
+    },
+    writing: {
+      name: 'Schreiben',
+      icon: '✍️',
+      color: 'bg-red-500',
+      exercises: [
+        {
+          id: 'w1',
+          title: 'Email Writing',
+          level: 'Klasse 8',
+          type: 'writing',
+          prompt: 'Write an email to your English pen pal about your last vacation. (50-80 words)',
+          hints: ['Start with a greeting', 'Mention where you went', 'Describe activities', 'End with a question'],
+          example: 'Hi Sarah,\n\nHow are you? I just came back from a great vacation in the Alps. We went hiking every day and the views were amazing! The weather was perfect and we even saw some wild animals. Have you been on any trips recently?\n\nBest wishes,\nMax'
+        },
+        {
+          id: 'w2',
+          title: 'Opinion Essay',
+          level: 'Klasse 9',
+          type: 'writing',
+          prompt: 'Write a short paragraph expressing your opinion: "Should students wear school uniforms?" (80-100 words)',
+          hints: ['State your opinion clearly', 'Give 2-3 reasons', 'Use linking words (firstly, moreover, however)', 'Conclude your argument'],
+          example: 'In my opinion, school uniforms have both advantages and disadvantages. Firstly, they promote equality among students since everyone wears the same clothes. Moreover, uniforms can strengthen school identity. However, they limit personal expression and creativity. Overall, I believe students should have the freedom to choose their own clothes while following a general dress code.'
+        }
+      ]
+    }
+  };
+
+  // Lerntheorien-Informationen
+  const learningTheories = [
+    {
+      id: 'spaced',
+      title: 'Spaced Repetition',
+      icon: '🔄',
+      description: 'Wiederholung in zunehmenden Abständen',
+      explanation: 'Diese App nutzt zeitlich verteiltes Lernen. Statt alles auf einmal zu lernen, wiederholst du Inhalte in optimalen Abständen (z.B. nach 1 Tag, 3 Tagen, 1 Woche). Dies verbessert die Langzeitspeicherung im Gehirn erheblich.',
+      implementation: 'Die App erinnert dich automatisch an Übungen, die du vor einiger Zeit gemacht hast.',
+      example: 'Vokabeln werden nach dem Algorithmus: 1 Tag → 3 Tage → 7 Tage → 14 Tage wiederholt.'
+    },
+    {
+      id: 'active',
+      title: 'Active Recall',
+      icon: '🧠',
+      description: 'Aktives Abrufen von Wissen',
+      explanation: 'Statt passiv zu lesen, testest du dich selbst. Das aktive Erinnern stärkt die neuronalen Verbindungen und macht Wissen abrufbarer.',
+      implementation: 'Alle Übungen erfordern, dass du aktiv antwortest, bevor du die Lösung siehst.',
+      example: 'Multiple-Choice-Fragen, Lückentexte und Schreibaufgaben fördern aktives Abrufen.'
+    },
+    {
+      id: 'feedback',
+      title: 'Immediate Feedback',
+      icon: '✅',
+      description: 'Sofortiges Feedback',
+      explanation: 'Du erfährst sofort, ob deine Antwort richtig war und warum. Dies verhindert, dass sich Fehler einprägen und verstärkt korrektes Lernen.',
+      implementation: 'Nach jeder Antwort bekommst du eine ausführliche Erklärung.',
+      example: 'Bei Grammatikfehlern siehst du sofort die Regel und Beispiele zur Verdeutlichung.'
+    },
+    {
+      id: 'contextual',
+      title: 'Kontextuelles Lernen',
+      icon: '🌍',
+      description: 'Lernen in authentischen Kontexten',
+      explanation: 'Sprache wird in realen Situationen gelernt, nicht isoliert. Dies macht Lernen bedeutungsvoller und anwendbar.',
+      implementation: 'Übungen basieren auf alltäglichen Situationen: Dialoge, Zeitungsartikel, E-Mails.',
+      example: 'Statt einzelne Vokabeln werden Wörter in Geschichten und Dialogen präsentiert.'
+    },
+    {
+      id: 'scaffolding',
+      title: 'Scaffolding',
+      icon: '🪜',
+      description: 'Stufenweiser Aufbau',
+      explanation: 'Neue Inhalte bauen auf vorhandenem Wissen auf. Anfangs gibt es mehr Hilfestellungen, die allmählich reduziert werden.',
+      implementation: 'Übungen steigen von Klasse 8 zu Klasse 9 im Schwierigkeitsgrad.',
+      example: 'Erst Simple Past lernen, dann Present Perfect, dann die Unterschiede verstehen.'
+    },
+    {
+      id: 'gamification',
+      title: 'Gamification',
+      icon: '🎮',
+      description: 'Spielelemente zur Motivation',
+      explanation: 'Punkte, Streaks und Erfolge erhöhen die intrinsische Motivation und machen Lernen unterhaltsam.',
+      implementation: 'Sammle Punkte, halte deine Streak aufrecht und erreiche Meilensteine.',
+      example: 'Jeden Tag Übungen machen erhöht deinen Streak und schaltet neue Level frei.'
+    }
+  ];
+
+  // Bildungsplan-Informationen
+  const curriculumTopics = [
+    {
+      grade: 'Klasse 8',
+      topics: [
+        { area: 'Kommunikative Fertigkeiten', items: ['Hör-/Hörsehverstehen: Gespräche und Berichte verstehen', 'Leseverstehen: Texte unterschiedlicher Art erschließen', 'Sprechen: An Gesprächen teilnehmen und zusammenhängendes Sprechen', 'Schreiben: Persönliche Texte und einfache formelle Texte verfassen'] },
+        { area: 'Interkulturelle Kompetenzen', items: ['Einblicke in Lebensweisen englischsprachiger Länder', 'Kulturelle Besonderheiten erkennen und respektieren'] },
+        { area: 'Grammatik', items: ['Present Perfect vs Simple Past', 'Will-Future und Going-to-Future', 'Relativsätze mit who, which, that', 'Modalverben (should, must, have to)'] },
+        { area: 'Wortschatz', items: ['Alltägliche Themen: Schule, Freizeit, Familie', 'Reisen und Tourismus', 'Medien und Kommunikation'] }
+      ]
+    },
+    {
+      grade: 'Klasse 9',
+      topics: [
+        { area: 'Kommunikative Fertigkeiten', items: ['Komplexere Texte verstehen und analysieren', 'Argumentieren und Meinungen begründen', 'Formelle E-Mails und Bewerbungen schreiben', 'Präsentationen halten'] },
+        { area: 'Interkulturelle Kompetenzen', items: ['Globale Themen: Umwelt, Gesellschaft, Berufswelt', 'Perspektivwechsel und kritisches Denken'] },
+        { area: 'Grammatik', items: ['Passive Voice (alle Zeiten)', 'Conditional Sentences (Type 1, 2, 3)', 'Indirekte Rede', 'Partizipialkonstruktionen'] },
+        { area: 'Wortschatz', items: ['Berufsorientierung und Arbeitswelt', 'Umwelt und Nachhaltigkeit', 'Gesellschaftliche Themen', 'Technologie und Innovation'] }
+      ]
+    }
+  ];
+
+  const startExercise = (exercise) => {
+    setCurrentExercise(exercise);
+    setUserAnswer('');
+    setSelectedAnswers([]);
+    setFeedback(null);
+    setActiveTab('exercise');
+  };
+
+  const checkAnswer = () => {
+    if (!currentExercise) return;
+
+    const isCorrect = currentExercise.type === 'writing' 
+      ? true // Writing exercises don't have automatic checking
+      : selectedAnswers.length > 0 && selectedAnswers[0] === currentExercise.correct;
+
+    setFeedback({
+      correct: isCorrect,
+      explanation: currentExercise.explanation || 'Siehe Beispielantwort oben.'
+    });
+
+    if (isCorrect) {
+      setPoints(points + 10);
+      setStreak(streak + 1);
+      setCompletedExercises({...completedExercises, [currentExercise.id]: true});
+    } else if (currentExercise.type !== 'writing') {
+      setStreak(0);
+    }
+  };
+
+  const HomePage = () => (
+    <div className="space-y-6">
+      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-8 rounded-lg">
+        <h1 className="text-3xl font-bold mb-2">Willkommen zur Englisch Lernapp</h1>
+        <p className="text-lg">Klasse 8 & 9 - Gymnasium Baden-Württemberg</p>
+        <div className="flex gap-4 mt-4">
+          <div className="bg-white bg-opacity-20 px-4 py-2 rounded">
+            <Trophy className="inline mr-2" size={20} />
+            {points} Punkte
+          </div>
+          <div className="bg-white bg-opacity-20 px-4 py-2 rounded">
+            <Star className="inline mr-2" size={20} />
+            {streak} Tage Streak
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <h2 className="text-2xl font-bold mb-4">Übungsbereiche</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Object.entries(exerciseCategories).map(([key, category]) => {
+            const completed = category.exercises.filter(ex => completedExercises[ex.id]).length;
+            const total = category.exercises.length;
+            return (
+              <div key={key} className={`${category.color} text-white p-6 rounded-lg cursor-pointer hover:opacity-90 transition`}
+                onClick={() => setActiveTab(key)}>
+                <div className="text-4xl mb-2">{category.icon}</div>
+                <h3 className="text-xl font-bold mb-2">{category.name}</h3>
+                <p className="text-sm opacity-90">{completed}/{total} abgeschlossen</p>
+                <div className="w-full bg-white bg-opacity-30 rounded-full h-2 mt-2">
+                  <div className="bg-white h-2 rounded-full" style={{width: `${(completed/total)*100}%`}}></div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="grid md:grid-cols-2 gap-6">
+        <div className="bg-gray-100 p-6 rounded-lg cursor-pointer hover:bg-gray-200 transition"
+          onClick={() => setActiveTab('theories')}>
+          <Brain className="mb-2 text-purple-600" size={32} />
+          <h3 className="text-xl font-bold mb-2">Lerntheorien</h3>
+          <p className="text-gray-600">Verstehe, wie effektives Lernen funktioniert</p>
+        </div>
+        <div className="bg-gray-100 p-6 rounded-lg cursor-pointer hover:bg-gray-200 transition"
+          onClick={() => setActiveTab('curriculum')}>
+          <BookMarked className="mb-2 text-green-600" size={32} />
+          <h3 className="text-xl font-bold mb-2">Bildungsplan</h3>
+          <p className="text-gray-600">Alle Themen für Klasse 8 und 9</p>
+        </div>
+      </div>
+    </div>
+  );
+
+  const ExerciseList = ({ category }) => (
+    <div className="space-y-4">
+      <button onClick={() => setActiveTab('home')} className="text-blue-600 hover:underline mb-4">
+        ← Zurück zur Übersicht
+      </button>
+      <h2 className="text-2xl font-bold mb-4">{category.name}</h2>
+      <div className="space-y-3">
+        {category.exercises.map(exercise => (
+          <div key={exercise.id} 
+            className="bg-white border-2 border-gray-200 p-4 rounded-lg hover:border-blue-400 cursor-pointer transition"
+            onClick={() => startExercise(exercise)}>
+            <div className="flex justify-between items-start">
+              <div className="flex-1">
+                <h3 className="font-bold text-lg">{exercise.title}</h3>
+                <p className="text-sm text-gray-600">{exercise.level}</p>
+              </div>
+              {completedExercises[exercise.id] && (
+                <CheckCircle className="text-green-500" size={24} />
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  const ExerciseView = () => {
+    if (!currentExercise) return null;
+
+    return (
+      <div className="max-w-3xl mx-auto space-y-6">
+        <button onClick={() => setActiveTab('home')} className="text-blue-600 hover:underline">
+          ← Zurück
+        </button>
+        
+        <div className="bg-white border-2 border-gray-200 p-6 rounded-lg">
+          <div className="mb-4">
+            <span className="text-sm text-gray-600">{currentExercise.level}</span>
+            <h2 className="text-2xl font-bold">{currentExercise.title}</h2>
+          </div>
+
+          {currentExercise.audio && (
+            <div className="bg-blue-50 p-4 rounded-lg mb-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Play size={20} className="text-blue-600" />
+                <span className="font-semibold">Hörtext:</span>
+              </div>
+              <p className="italic text-gray-700">{currentExercise.audio}</p>
+            </div>
+          )}
+
+          {currentExercise.text && (
+            <div className="bg-gray-50 p-4 rounded-lg mb-4">
+              <p className="text-gray-800 leading-relaxed">{currentExercise.text}</p>
+            </div>
+          )}
+
+          {currentExercise.prompt && (
+            <div className="mb-4">
+              <p className="font-semibold mb-2">{currentExercise.prompt}</p>
+              {currentExercise.hints && (
+                <div className="bg-yellow-50 p-3 rounded mb-3">
+                  <p className="font-semibold text-sm mb-1">💡 Tipps:</p>
+                  <ul className="list-disc list-inside text-sm space-y-1">
+                    {currentExercise.hints.map((hint, i) => (
+                      <li key={i}>{hint}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              <textarea
+                className="w-full h-40 p-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none"
+                placeholder="Schreibe deine Antwort hier..."
+                value={userAnswer}
+                onChange={(e) => setUserAnswer(e.target.value)}
+              />
+              {feedback && currentExercise.example && (
+                <div className="mt-3 bg-green-50 p-3 rounded">
+                  <p className="font-semibold text-sm mb-1">📝 Beispielantwort:</p>
+                  <p className="text-sm whitespace-pre-line">{currentExercise.example}</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {currentExercise.question && (
+            <div className="mb-4">
+              <p className="font-semibold mb-3">{currentExercise.question}</p>
+              <div className="space-y-2">
+                {currentExercise.options.map((option, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setSelectedAnswers([index])}
+                    disabled={feedback !== null}
+                    className={`w-full p-3 rounded-lg text-left transition ${
+                      selectedAnswers.includes(index)
+                        ? feedback === null
+                          ? 'bg-blue-100 border-2 border-blue-
