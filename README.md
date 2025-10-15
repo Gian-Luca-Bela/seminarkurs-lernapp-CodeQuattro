@@ -3,5 +3,10 @@ KI-gestützte Lernapp für English Mittelstufe
 
 Dieses Projekt wurde im Rahmen des Seminarkurs "KI - learn smart" des Maria-von-Linden-Gymnasiums gestartet.
 
-# Ziel: eine KI gestützte Lernapp für Englisch der Mittelstufe.
+Ziel: eine KI gestützte Lernapp für Englisch der Mittelstufe.
 
+Team:
+Lilli Lange
+Gian-Luca Bela
+Vin Stein
+Paul Stegmeyer
