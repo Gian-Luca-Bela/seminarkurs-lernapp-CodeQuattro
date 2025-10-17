@@ -1,4 +1,4 @@
-Synonyme -> besserer Wortschatz
+Wortverwandschaften -> besserer Wortschatz
 
 Vokabelübungen (Karteikarten-like)
 
