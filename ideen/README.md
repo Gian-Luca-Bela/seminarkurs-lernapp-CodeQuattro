@@ -1,4 +1,4 @@
-Wortverwandschaften -> besserer Wortschatz
+Wortverwandschaften (Synonyme; Antonyme; Kognaten) -> besserer Wortschatz
 
 Vokabelübungen (Karteikarten-like)
 
